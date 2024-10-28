@@ -5,15 +5,19 @@ jupyter:
     text_representation:
       extension: .md
       format_name: markdown
-      format_version: '1.2'
-      jupytext_version: 1.6.0
+      format_version: '1.3'
+      jupytext_version: 1.14.1
   kernelspec:
     display_name: Python 3 (ipykernel)
     language: python
     name: python3
 ---
 
+These notes are based on my latex notes (`python-scientific-pandas`) which in turn are based on book "Pandas in Action", which has an associated repository: 
+
 # Panda: Basics
+
+
 
 
 ```python pycharm={"is_executing": false}
@@ -27,9 +31,9 @@ print(m2)
 
 ## DataFrames
 
-Inspect a dataframe
+### Inspect a dataframe
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 print("Index:", m.index)
 print("Index (m2):", m2.index)
 print("Columns:", m.columns)
@@ -40,10 +44,10 @@ print("Dtypes", m.dtypes)
 ```
 
 <!-- #region pycharm={"name": "#%% md\n"} -->
-Get some data from a dataframe
+### Get some data from a dataframe
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 print(m.head(1))
 print(m.tail(1))
 print(m.to_numpy())
@@ -57,25 +61,25 @@ print(m["Studio"]) # extract a column as a Series (keeping the index)
 Notice the type of a row
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 type(m.iloc[0])
 ```
 
 <!-- #region pycharm={"name": "#%% md\n"} -->
-Analyse a dataframe
+### Analyse a dataframe
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 studios_occurrences = m["Studio"].value_counts()
 print(type(studios_occurrences))
 print(studios_occurrences)
 ```
 
 <!-- #region pycharm={"name": "#%% md\n"} -->
-Filtering:
+### Filtering
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 print(m[m["Studio"] == "Universal"])
 
 released_by_universal = m["Studio"] == "Universal"
@@ -91,9 +95,9 @@ has_dark_in_title = m["Title"].str.lower().str.contains("dark")
 print(m[has_dark_in_title])
 ```
 
-Bulk change
+### Bulk change
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 m["Gross"] = (
   m["Gross"].astype('str')
   .str.replace("$", "", regex = False)
@@ -104,10 +108,10 @@ m
 ```
 
 <!-- #region pycharm={"name": "#%% md\n"} -->
-Grouping data:
+### Grouping data
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 studios = m.groupby("Studio") # type: pandas.core.groupby.generic.DataFrameGroupBy
 print(type(studios))
 studios_with_higher_gross = studios["Gross"].sum().sort_values(ascending = False).head()
@@ -118,7 +122,7 @@ studios_with_higher_gross
 ## Series
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 import numpy as np
 
 s = pd.Series() #  Series([], dtype: object)
@@ -131,7 +135,7 @@ print(s)
 ```
 
 <!-- #region pycharm={"name": "#%% md\n"} -->
-Inspecting
+### Inspecting
 <!-- #endregion -->
 
 ```python pycharm={"name": "#%%\n"}
@@ -144,10 +148,10 @@ print(s.is_monotonic_decreasing)
 ```
 
 <!-- #region pycharm={"name": "#%% md\n"} -->
-Reading data
+### Reading data
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 s = pd.Series(range(0,500,5))
 print(s.head())
 print(s.tail())
@@ -173,7 +177,7 @@ print(s1 + s2)
 ### Challenge (sec 2.7.1 'Pandas in Action')
 <!-- #endregion -->
 
-```python pycharm={"name": "#%%\n", "is_executing": false}
+```python pycharm={"is_executing": false, "name": "#%%\n"}
 superheroes = [
  "Batman",
  "Superman",
