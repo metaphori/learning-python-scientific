@@ -9,3 +9,4 @@ jupytext --sync process-survey-data.Rmd
 
 # convert notebook to html
 jupyter nbconvert --to html process-survey-data.ipynb
+jupytext numpy.md --to ipynb
