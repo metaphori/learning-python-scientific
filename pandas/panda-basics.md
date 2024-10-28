@@ -8,20 +8,110 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.14.1
   kernelspec:
-    display_name: Python 3 (ipykernel)
+    display_name: mooc
     language: python
     name: python3
 ---
 
 These notes are based on my latex notes (`python-scientific-pandas`) which in turn are based on book "Pandas in Action", which has an associated repository: 
 
-# Panda: Basics
+
+# Pandas in 10 minutes
+
+Reference: [10 minutes to pandas](https://pandas.pydata.org/docs/user_guide/10min.html)
 
 
+#### Conventional imports
 
+```python
+import numpy as np
+
+import pandas as pd
+```
+
+### Basic data structures
+
+Pandas provides two types of classes for handling data:
+
+1. `Series`: a one-dimensional labeled array holding data of any type (such as integers, strings, Python objects etc.)
+2. `DataFrame`: a two-dimensional data structure that holds data like a two-dimension array or a **table** with rows and columns.
+    - there are two **axes**: the **index** (axis 0) and **columns** (axis 1)
+
+
+#### Series: creation
+
+Creating a `Series` by passing a **list of values**, letting pandas create a default **`RangeIndex`**.
+
+```python
+s = pd.Series([1, 3, 5, np.nan, 6, 8])
+s
+```
+
+#### DataFrame: creation
+
+Creating a `DataFrame` by passing a NumPy array with a datetime index using **`date_range()`** and labeled columns:
+
+```python
+dates = pd.date_range('20130101', periods=6)
+print(dates)
+df = pd.DataFrame(np.random.randn(6, 4), index=dates, columns=list("ABCD"))
+df
+```
+
+Creating a DataFrame by **passing a dictionary** of objects where the keys are the column labels and the values are the column values.
+
+```python
+df2 = pd.DataFrame(
+    {
+        "A": 1.0,
+        "B": pd.Timestamp("20130102"),
+        "C": pd.Series(1, index=list(range(4)), dtype="float32"),
+        "D": np.array([1,2,3,4], dtype="int32"),
+        "E": pd.Categorical(["test", "train", "test", "train"]),
+        "F": "foo",
+    }
+)
+df2
+```
+
+The columns of the resulting DataFrame have different dtypes:
+
+```python
+df2.dtypes
+```
+
+### Viewing data
+
+Use `DataFrame.head()` and `DataFrame.tail()` to view the top and bottom rows of the frame respectively
+
+```python
+print(
+    df.head(), '\n',
+    df.tail(2)
+)
+```
+
+Display the `DataFrame.index` or `DataFrame.columns`
+
+```python
+print(
+    df, 
+    '\n\nShape = ', df.shape, 
+    '\nIndex = \n', df.index,
+    '\nColumns = \n', df.columns
+)
+```
+
+Return a NumPy representation of the **underlying data  with `DataFrame.to_numpy()` i.e. without the index or column labels**:
+
+```python
+df.to_numpy()
+```
+
+# Panda: Basics (Inspecting Movies)
 
 ```python pycharm={"is_executing": false}
-import pandas as pd
+# import pandas as pd
 m = pd.read_csv("../data/movies.csv")
 m2 = pd.read_csv("../data/movies.csv", index_col="Rank")
 print(type(m))
