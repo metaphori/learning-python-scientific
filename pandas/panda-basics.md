@@ -82,6 +82,13 @@ df2.dtypes
 
 ### Viewing data
 
+
+**`DataFrame.describe()`** shows a quick statistic summary of your data:
+
+```python
+df.describe()
+```
+
 Use `DataFrame.head()` and `DataFrame.tail()` to view the top and bottom rows of the frame respectively
 
 ```python
@@ -106,6 +113,50 @@ Return a NumPy representation of the **underlying data  with `DataFrame.to_numpy
 
 ```python
 df.to_numpy()
+```
+
+* NumPy arrays have one dtype for the entire array while **pandas DataFrames have one dtype per column**. 
+    * When you call `DataFrame.to_numpy()`, pandas will find the **NumPy dtype that can hold all of the dtypes in the DataFrame**. If the common data type is **object**, `DataFrame.to_numpy()` will **require copying data (!!!)**.
+
+```python
+df.dtypes
+```
+
+**Sorting.** `DataFrame.sort_index(axis=0, ascending=True)` sorts by an axis (remember: axis 0 denotes the index, and axis 1 the columns). `DataFrame.sort_values(by=C)` sorts by value.
+
+```python
+print(
+    df, '\n\n',
+    'Sorted by axis=1 (i.e. COLUMNS) DESC\n', 
+    df.sort_index(axis=1, ascending=False), '\n\n',
+    'Sorted by values of B\n',
+    df.sort_values(by="B")
+)
+```
+
+### Selection of data
+
+- Get item `[]`
+- Selection by label: `loc()`, `at()`
+- Selection by position: `iloc()`, `iat()`
+- Boolean indexing: e.g. `df[df["A"]>0]`
+- Setting values: e.g., `df["F"] = series1`
+- Note: While standard Python / NumPy expressions for selecting and setting are intuitive and come in handy for interactive work, for production code, we recommend the optimized pandas data access methods, DataFrame.at(), DataFrame.iat(), DataFrame.loc() and DataFrame.iloc().
+
+
+#### GetItem `[]`
+
+For a `DataFrame`, passing a **single label** as in `df["A"]` **selects a columns and yields a `Series`** (in this case, equivalent to `df.A`):
+
+```python
+df["A"] # same as df.A; it selects the  column
+```
+
+For a DataFrame, passing a **slice `:` selects matching rows**:
+
+
+```python
+df[0:3] # selects rows
 ```
 
 # Panda: Basics (Inspecting Movies)
