@@ -144,7 +144,7 @@ print(
 - Note: While standard Python / NumPy expressions for selecting and setting are intuitive and come in handy for interactive work, for production code, we recommend the optimized pandas data access methods, DataFrame.at(), DataFrame.iat(), DataFrame.loc() and DataFrame.iloc().
 
 
-#### GetItem `[]`
+#### Data selection via GetItem `[]`
 
 For a `DataFrame`, passing a **single label** as in `df["A"]` **selects a columns and yields a `Series`** (in this case, equivalent to `df.A`):
 
@@ -157,6 +157,84 @@ For a DataFrame, passing a **slice `:` selects matching rows**:
 
 ```python
 df[0:3] # selects rows
+```
+
+#### Data Selection by Label
+
+Using **`DataFrame.loc[index_labels, column_labels]`**
+
+* Allowed inputs: single label (`'a'`); list/array of labels (`['a','b']`); slice object with labels (`'a':'f'`); a Boolean array of the same length as the axis being sliced (`[True,False,True]`); an alignabled Boolean Series/index; a callable function
+
+```python
+df.loc[:, :]
+```
+
+```python
+df.loc[dates[0]]
+```
+
+```python
+df.loc[:, ["A"]]
+```
+
+```python
+# label slicing
+df.loc["20130102":"20130104", ["A", "B"]]
+```
+
+```python
+# access to a scalar value
+(df.loc[dates[0], "A"], df.at[dates[0], "A"])
+```
+
+#### Data Selection by Position: `iloc[]`, `iat[]`
+
+* `iloc[i]`, `iloc[index_slice, column_slice]`, `iloc[list_of_indexes, list_of_columns_positions]`
+
+```python
+df.iloc[-1:0:-1, 0:2]
+```
+
+```python
+df.iloc[3] # 4th row
+```
+
+```python
+df.iloc[[1,2,4], [0,2]]
+```
+
+```python
+(df.iloc[1:3, :], df.iloc[:, 1:3])
+```
+
+```python
+# for getting a value explicitly
+(df.iloc[1,1], df.iat[1,1])
+```
+
+#### Data Selection by Boolean Indexing
+
+- You can filter data by indexing your dataframe/series with a sequence of Booleans of the same length of the indexed axis: `df[[True,False,True,....]]`
+
+```python
+# df[[True] * (len(df.index) // 2)] # Error: length of 3 instead of 6
+df[[True] * len(df.index)]
+```
+
+```python
+print(
+    df["A"] > 0.5, 
+    '\n\n',
+    df[df["A"] > 0.5]
+)
+```
+
+```python
+print(
+    df > 0,
+    '\n\n',
+    df[df > 0]
+)
 ```
 
 # Panda: Basics (Inspecting Movies)
