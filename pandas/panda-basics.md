@@ -32,6 +32,7 @@ import pandas as pd
 ```python
 # other imports for the examples
 import math
+import matplotlib.pyplot as plt
 ```
 
 ### Basic data structures
@@ -392,11 +393,11 @@ print(s, '\n', s.value_counts())
 ```python
 
 np.random.seed(5)
-df = pd.DataFrame(np.random.randint(5, 7, size=15).reshape(5,3), index=list('ABCDE'), columns=list('XYZ')) 
-print(df)
+df0 = pd.DataFrame(np.random.randint(5, 7, size=15).reshape(5,3), index=list('ABCDE'), columns=list('XYZ')) 
+print(df0)
 # DataFrame.value_counts(subset=None, normalize=False, sort=True, ascending=False, dropna=True)
 # Return a Series containing the frequency of each distinct row in the Dataframe.
-df.value_counts() # with a df, it counts the number of identical rows
+df0.value_counts() # with a df, it counts the number of identical rows
 ```
 
 #### String methods
@@ -410,7 +411,194 @@ s = pd.Series(["A", "B", "C", "Aaba", "Baca", np.nan, "CABA", "dog", "cat"])
 s.str.lower()
 ```
 
+### Merging dataframes
+
+- `pd.concat(objs, *, axis=0, join='outer', ...)` concatenate pandas objects along a particular axis.
+- `pd.merge(left, right, how='inner', on=None, ...)` merges DataFrame or named Series objects with a database-style join.
+
+
+
+#### Concatenating dataframes with `pd.concat(dfs)`
+
+- N.B.: Adding a column to a DataFrame is relatively fast. However, **adding a row requires a copy, and may be expensive**. 
+    - RECOMMANDATION: **pass a pre-built list of records to the DataFrame constructor instead of building a DataFrame by iteratively appending records to it**.
+
+
+```python
+df0 = pd.DataFrame(np.random.randn(10, 4))
+print(df0)
+pieces = [df0[0:2], df0[7:]]
+pd.concat(pieces)
+```
+
+#### Join: merging by SQL-style join types along specific columns
+
+Types of merges (argument `how='inner'`)
+
+* **inner**: use intersection of keys from both frames, similar to a SQL inner join; preserve the order of the left keys.
+* **cross**: creates the cartesian product from both frames, preserves the order of the left keys.
+* **left**: use only keys from left frame, similar to a SQL left outer join; preserve key order.
+* **right**: use only keys from right frame, similar to a SQL right outer join; preserve key order.
+* **outer**: use union of keys from both frames, similar to a SQL full outer join; sort keys lexicographically.
+
+```python
+left = pd.DataFrame({"key": ["foo", "foo", "bar", "barl"], "lval": [0, 1, 2, 3]})
+right = pd.DataFrame({"key": ["foo", "foo",  "bar", "barr"], "rval": [4, 5, 6, 7]})
+print(left, '\n', right)
+```
+
+```python
+print(
+    'inner join = \n', pd.merge(left, right, on="key"), '\n', # default is how='inner' join
+    '\nleft join = \n', pd.merge(left, right, how="left"), '\n',    
+    '\nouter join = \n', pd.merge(left, right, how="outer"), '\n',
+    '\ncross join = \n', pd.merge(left, right, how='cross'), '\n'
+)
+```
+
+### Grouping
+
+By “group by” we are referring to a process involving one or more of the following steps:
+
+* **Splitting** the data into groups based on some criteria
+* **Applying** a function to each group independently
+* **Combining** the results into a data structure
+
+```python
+np.random.seed(0)
+df = pd.DataFrame(
+    {
+        "A": ["foo", "bar", "foo", "bar", "foo", "bar", "foo", "foo"],
+        "B": ["one", "one", "two", "three", "two", "two", "one", "two"],
+        "C": np.random.randint(0,9,size=8),
+        "D": np.random.randint(0,9,size=8),
+    }
+)
+print(df)
+# Grouping by a column label, selecting column labels, and then applying the DataFrameGroupBy.count() function to the resulting groups:
+print(df.groupby("A")[["C", "D"]].count())
+# Grouping by multiple columns label forms MultiIndex.
+print(df.groupby(['B', 'A']).sum())
+```
+
+### Reshaping and hierarchical indexing
+
+**Hierarchical / Multi-level indexing** enables you to store and manipulate data with an arbitrary number of dimensions in lower dimensional data structures like Series (1d) and DataFrame (2d).
+    - The **`MultiIndex`** object is the hierarchical analogue of the standard Index object which typically stores the axis labels in pandas objects. You can think of MultiIndex as an array of tuples where each tuple is unique.
+
+```python
+a = np.array(['foo','foo','bar','bar'])
+b = np.array(list('wxyz'))
+index = pd.MultiIndex.from_arrays([a,b], names=["first", "second"])
+print(index)
+hdf = pd.DataFrame(np.random.randint(0, 9, size=8).reshape(4,2), index=index, columns=["A", "B"])
+print(hdf)
+print('COLUMNS = ', hdf.columns)
+```
+
+The **`stack()`** method “compresses” a level in the DataFrame’s columns. I.e. it stacks the prescribed level(s) **from columns to index**. Returns a reshaped DataFrame or Series having a multi-level index with one or more new inner-most levels compared to the current DataFrame. The new inner-most levels are created by pivoting the columns of the current dataframe: if the columns have a single level, the output is a Series; if the columns have multiple levels, the new index level(s) is (are) taken from the prescribed level(s) and the output is a DataFrame.
+
+```python
+print(hdf.stack().index)
+print(hdf.stack())
+print('COLUMNS = ', hdf.stack().columns if hdf.stack().ndim>1 else '(none, i.e., series)')
+```
+
+**Unstacking**: Method `unstack()` pivots a level of the (necessarily hierarchical) index labels. Returns a DataFrame having a new level of column labels whose inner-most level consists of the pivoted index labels.
+
+```python
+print('hdf.index = ', list(hdf.index), ' with names =', hdf.index.names)
+print(hdf)
+print('\nhdf.unstack(0).index = ', hdf.unstack(0).index)
+print('\nhdf.unstack(0).columns = ', list(hdf.unstack(0).columns))
+print(hdf.unstack(0))
+print('\nhdf.unstack(1).index = ', hdf.unstack(1).index)
+print('\nhdf.unstack(1).columns = ', list(hdf.unstack(1).columns))
+print(hdf.unstack(1))
+
+```
+
+These topics are fairly advanced. See [Hierarchical indexing](https://pandas.pydata.org/docs/user_guide/advanced.html#advanced-hierarchical) and [pivot tables](https://pandas.pydata.org/docs/user_guide/reshaping.html#reshaping-pivot) for details.
+
+
+### Time series
+
+pandas has simple, powerful, and efficient functionality for working with time series
+
+* `Series.resample()` returns a **resampling iterator**, which enables e.g. to aggregate data when performing frequency conversion (e.g., summing data points when converting secondly data into 1-minutely data)
+* `Series.tz_localize('UTC')` localizes a time series to a time zone (e.g., 'UTC')
+* `Series.tz_convert('US/Eastern')` converts a timezones aware time series to another time zone
+* `ts + np.offsets.BusinessDays(5)` adds a non-fixed duration to a time series
+
+
+
+```python
+rng = pd.date_range("1/1/2012", periods=100, freq="s") # a DateTimeIndex of 100 seconds from 1/1/2012
+np.random.seed(0)
+ts = pd.Series(np.random.randint(0, 500, len(rng)), index=rng) # a Series of data points for the 100 seconds
+ts.resample("1Min").sum()
+```
+
+### Categoricals
+
+See also [the docs on categoricals](https://pandas.pydata.org/docs/user_guide/categorical.html).
+
+**Categoricals** are a pandas data type corresponding to **categorical variables** in statistics. A categorical variable takes on a **limited, and usually fixed, number of possible values (categories; levels in R)**. 
+
+- Examples are gender, social class, blood type, country affiliation, observation time or rating via Likert scales.
+- In contrast to statistical categorical variables, categorical data might have an order (e.g. ‘strongly agree’ vs ‘agree’ or ‘first observation’ vs. ‘second observation’), but numerical operations (additions, divisions, …) are not possible.
+- All values of categorical data are either in `categories` or np.nan. Order is defined by the order of categories, not lexical order of the values. Internally, the data structure consists of a categories array and an integer array of codes which point to the real value in the categories array.
+
+Categorical Series or columns in a DataFrame can be created in several ways:
+
+- By specifying **`dtype="category"`** when constructing a Series
+- By converting an existing Series or column to a category dtype via `df['A'].astype('category')`
+- By using special functions, such as `cut()`, which groups data into discrete bins
+- By passing a raw `pandas.Categorical` object to a Series or assigning it to a DataFrame
+
+```python
+df = pd.DataFrame(
+    {"id": [1, 2, 3, 4, 5, 6], "raw_grade": ["a", "b", "b", "a", "a", "e"]}
+)
+df["grade"] = df["raw_grade"].astype("category")
+print(df)
+new_categories = ["very good", "good", "very bad"]
+df["grade"] = df["grade"].cat.rename_categories(new_categories)
+df = df.sort_values(by="grade")
+print(df)
+# add more categories (note: missing categories are added)
+df["grade"] = df["grade"].cat.set_categories( ["very bad", "bad", "medium", "good", "very good"] )
+df.groupby("grade", observed=False).size() # note: by observed=False, also empty categories are observed
+```
+
+## Plotting
+
+See [visualization (plotting)](https://pandas.pydata.org/docs/user_guide/visualization.html#visualization) for more.
+
+```python
+ts = pd.Series(np.random.randn(1000), index=pd.date_range("1/1/2000", periods=1000))
+ts = ts.cumsum()
+ts.plot();
+```
+
+```python
+df = pd.DataFrame(np.random.randn(1000, 4), index=ts.index, columns=["A", "B", "C", "D"])
+df = df.cumsum()
+fig,axes = plt.subplots()
+df.plot(ax=axes) # provide an explicit axes
+axes.legend(loc='best')
+
+```
+
+### Importing and exporting data
+
+* CSV: `pd.read_csv('path/to/file.csv')` and `DataFrame.to_csv('path/to/file.csv')`
+* Similar methods `read_<X>` and `to_<X>` available also for **Parquet** and **Excel**
+
+
 # Panda: Basics (Inspecting Movies)
+
+The following tutorial introducing the basics of pandas on a movies dataset is based on *Pandas in Action*; see also <https://github.com/paskhaver/pandas-in-action/>.
 
 ```python pycharm={"is_executing": false}
 # import pandas as pd
@@ -440,12 +628,15 @@ print("Dtypes", m.dtypes)
 <!-- #endregion -->
 
 ```python pycharm={"is_executing": false, "name": "#%%\n"}
-print(m.head(1))
-print(m.tail(1))
+print(m.head(2))
+print(m.tail(3))
 print(m.to_numpy())
-print(m.iloc[0])
-print(m2.loc[1])
-print(m.sort_values(by = "Year", ascending = True).iloc[0])
+```
+
+```python
+print(m.iloc[0], end="\n\n") # first row
+print(m2.loc[1], end="\n\n") # by row label 
+print(m.sort_values(by = "Year", ascending = True).iloc[0], end="\n\n")
 print(m["Studio"]) # extract a column as a Series (keeping the index)
 ```
 
