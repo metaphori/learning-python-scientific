@@ -5,8 +5,8 @@ jupyter:
     text_representation:
       extension: .md
       format_name: markdown
-      format_version: '1.3'
-      jupytext_version: 1.14.1
+      format_version: '1.2'
+      jupytext_version: 1.6.0
   kernelspec:
     display_name: mooc
     language: python
@@ -34,8 +34,10 @@ import pandas as pd
 Pandas provides two types of classes for handling data:
 
 1. `Series`: a one-dimensional labeled array holding data of any type (such as integers, strings, Python objects etc.)
-2. `DataFrame`: a two-dimensional data structure that holds data like a two-dimension array or a **table** with rows and columns.
-    - there are two **axes**: the **index** (axis 0) and **columns** (axis 1)
+    - More precisely: a **1-dim ndarray with axis labels** (including **time series**)
+    - Main properties: `index`, `values`, `dtype`, `shape` (which will be `(n,)`), `axes`, `name`, `ndim` (1 by definition)
+2. `DataFrame`: a **two-dimensional** data structure that holds data like a two-dimension array or a **table** with rows and columns.
+    - there are two **axes** (aka **labels**): the **index** (axis 0) and **columns** (axis 1)
 
 
 #### Series: creation
@@ -43,11 +45,36 @@ Pandas provides two types of classes for handling data:
 Creating a `Series` by passing a **list of values**, letting pandas create a default **`RangeIndex`**.
 
 ```python
-s = pd.Series([1, 3, 5, np.nan, 6, 8])
-s
+s = pd.Series([1, 3, 5, np.nan, 6, 8]) # index defaults to RangeIndex(0,n)
+print(s)
+# series properties
+print(f"s.index = {s.index}\ns.values = {s.values} \ns.dtype={s.dtype}\ns.shape = {s.shape}\ns.axes = {s.axes}\ns.ndim={s.ndim}")
+print(f"s.name={s.name}\ns.size={s.size}\ns.empty={s.empty}\ns.values={s.values}")
+```
+
+```python
+d = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+ser = pd.Series(data=d, index=['a', 'b', 'c'], name='my_series')
+d['a'] = 999 # n.b. changing d doesn't change ser as by default it is copied
+print(ser) # note: ('d',4) excluded
+
+arr = np.array([5,7])
+ser = pd.Series(arr, index=['b','d'], copy=False) # nb: length of values must match length of index
+arr[1] = 999 # n.b. changing arr changes ser as we have overridden the default with copy=False
+print(ser)
+ser.iloc[0] = 888 # n.b. changing ser changes arr
+print(arr)
+
+ser = pd.Series(arr, dtype=np.float64, copy=False)
+arr[0] = 0 # n.b.: despite copy=False, the conversion to float implies a copy is done
+print(ser)
 ```
 
 #### DataFrame: creation
+
+The constructor is as follows: `class pandas.DataFrame(data=None, index=None, columns=None, dtype=None, copy=None)`
+
+* you can also pass a dictionary of values, where the **keys** are taken as **columns** and the **values** as the entries for that column (which can be **constants** or **same-sized iterables** with `n` entries, from which size the default `RangeIndex(0,n)` is built)
 
 Creating a `DataFrame` by passing a NumPy array with a datetime index using **`date_range()`** and labeled columns:
 
@@ -136,9 +163,9 @@ print(
 
 ### Selection of data
 
-- Get item `[]`
-- Selection by label: `loc()`, `at()`
-- Selection by position: `iloc()`, `iat()`
+- Get item `s[column_label]`
+- Selection by column/index labels: `loc[index_labels,column_labels]` (Access a group of rows/columns by label(s) or a bool array)), `at[row,col]` (access a single value by a row/col pair)
+- Selection by position: `iloc[index_slice,col_slice]`, `iat[row_index,col_index]`
 - Boolean indexing: e.g. `df[df["A"]>0]`
 - Setting values: e.g., `df["F"] = series1`
 - Note: While standard Python / NumPy expressions for selecting and setting are intuitive and come in handy for interactive work, for production code, we recommend the optimized pandas data access methods, DataFrame.at(), DataFrame.iat(), DataFrame.loc() and DataFrame.iloc().
@@ -170,6 +197,7 @@ df.loc[:, :]
 ```
 
 ```python
+print(dates, '\n', dates[0])
 df.loc[dates[0]]
 ```
 
