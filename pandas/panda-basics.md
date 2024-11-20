@@ -29,6 +29,11 @@ import numpy as np
 import pandas as pd
 ```
 
+```python
+# other imports for the examples
+import math
+```
+
 ### Basic data structures
 
 Pandas provides two types of classes for handling data:
@@ -110,10 +115,16 @@ df2.dtypes
 ### Viewing data
 
 
+#### Description and basic properties
+
 **`DataFrame.describe()`** shows a quick statistic summary of your data:
 
 ```python
 df.describe()
+```
+
+```python
+df.B
 ```
 
 Use `DataFrame.head()` and `DataFrame.tail()` to view the top and bottom rows of the frame respectively
@@ -149,6 +160,8 @@ df.to_numpy()
 df.dtypes
 ```
 
+#### Sorting
+
 **Sorting.** `DataFrame.sort_index(axis=0, ascending=True)` sorts by an axis (remember: axis 0 denotes the index, and axis 1 the columns). `DataFrame.sort_values(by=C)` sorts by value.
 
 ```python
@@ -163,7 +176,7 @@ print(
 
 ### Selection of data
 
-- Get item `s[column_label]`
+- Get item: `s[column_label]` os `s[row_slice]`
 - Selection by column/index labels: `loc[index_labels,column_labels]` (Access a group of rows/columns by label(s) or a bool array)), `at[row,col]` (access a single value by a row/col pair)
 - Selection by position: `iloc[index_slice,col_slice]`, `iat[row_index,col_index]`
 - Boolean indexing: e.g. `df[df["A"]>0]`
@@ -171,7 +184,7 @@ print(
 - Note: While standard Python / NumPy expressions for selecting and setting are intuitive and come in handy for interactive work, for production code, we recommend the optimized pandas data access methods, DataFrame.at(), DataFrame.iat(), DataFrame.loc() and DataFrame.iloc().
 
 
-#### Data selection via GetItem `[]`
+#### Data selection via GetItem `[col_label]` or `[row_slice]`
 
 For a `DataFrame`, passing a **single label** as in `df["A"]` **selects a columns and yields a `Series`** (in this case, equivalent to `df.A`):
 
@@ -240,9 +253,11 @@ df.iloc[[1,2,4], [0,2]]
 (df.iloc[1,1], df.iat[1,1])
 ```
 
-#### Data Selection by Boolean Indexing
+#### Row and Data Selection by Boolean Indexing
 
-- You can filter data by indexing your dataframe/series with a sequence of Booleans of the same length of the indexed axis: `df[[True,False,True,....]]`
+Remember GetItem: `df[column_label]` or `df[row_slice]`
+
+You may **select rows** from a DataFrame using a **boolean vector the same length as the DataFrame's index**
 
 ```python
 # df[[True] * (len(df.index) // 2)] # Error: length of 3 instead of 6
@@ -257,12 +272,142 @@ print(
 )
 ```
 
+You may select cells (values) using a Boolean criteron. Notice: this **preserves input data shape** (method **`where`** is used under the hood as the implementation).
+
 ```python
 print(
     df > 0,
     '\n\n',
-    df[df > 0]
+    df[df > 0],
+    '\n\n',
+    df.where(df > 0, other=np.nan) # same as above
 )
+```
+
+Another method for filtering is **`isin()`** (similar to indexing by a boolean criterion)
+
+```python
+import math
+df2 = df.copy()
+df2["D"] = ["one", "one", "two", "three", "four", "three"]
+print(
+    df2,
+    '\n',
+    df2[df2['D'].isin(['two','three'])]
+)
+```
+
+#### Bulk setting
+
+* **Setting a new column** `df['C'] = series` automatically aligns data by the indexes
+* **Setting a cell by labels** `df.at[index_label, col_label] = v`
+* **Setting a cell by position** `df.iat[0,1] = 0`
+* **Setting multiple cells by condition** `df[df > 0] = v`
+* **Setting multiple cells by slicing rows/cols** `df.loc[index_slice, col_slice] = nparr`
+
+```python
+sdf = df.copy()
+print(sdf)
+sdf['A'] = 0
+print(sdf)
+sdf.at[dates[1], 'A'] = 999
+sdf.iat[4, 0] = 888
+sdf[sdf < 0] = np.nan
+sdf.loc[sdf.index[3:], 'B':'D'] = 55
+print(sdf)
+```
+
+### Missing data
+
+For NumPy data types, **`np.nan` represents missing data** and it is **by default not included in computations**.
+
+- `df.reindex(index=..., columns=...)` performs **reindexing**, which allows you to change/add/delete the index on a specified axis
+- **`df.dropna()`** drops rows that have any missing data (or rows with all missing data if `how=all`)  
+- `df.fillna(value=77)` fills missing data
+- **`pd.isna(df)`** gets the Boolean mask where values are nan (note: you can't do `df == np.nan` since `np.nan == np.nan` is false, and `df is np.nan` is not what you want)
+
+```python
+# reindexing
+df0 = df.copy()
+print(df0)
+df0 = df0.reindex(index=dates[1:4], columns=list(df.columns[1:]) + ['E'])
+print(df0)
+```
+
+```python
+# dropping rows if any/all value is NaN
+ddf = df.copy()
+ddf.iloc[0,0] = np.nan
+
+ddf.iloc[3] = np.nan
+print(ddf)
+print(ddf.dropna())
+print(ddf.dropna(how='all'))
+```
+
+### Operations
+
+Note: Operations **in general exclude missing data**.
+
+
+#### Stats
+
+```python
+df0 = df.copy()
+df0[df0<0] = np.nan
+print(df0,'\n\n',
+      df0.mean(), # implicitly axis=0 (i.e. take the mean along index, returning the mean for each column)
+      '\n\n',
+      df0.mean(axis=1)
+)
+
+```
+
+#### User-def functions: `agg()` and `transform()`
+
+- `agg(f)` applies a user defined function that reduces the df
+- `transform(f)` applies a user defined function to produce a new df
+- `map(f)` applies a user defined function **element-wise** to produce a new df
+- `apply(f)` applies `f` (e.g. numpy universal function `np.sqrt`) element-wise or along a given `axis` (`axis=0` by default) e.g. if `f=np.sum`
+
+```python
+# transform, map, apply
+df0 = df.reindex(index=dates[2:])
+df0[df0<0] = np.nan
+print('df=\n', df0)
+# nb: with transform(), lambda x: math.floor(x) would not work 
+#    since the given function must either work when passed a DataFrame or when passed to DataFrame.apply
+print('\ndf.transform(lambda x: x * 10) = \n', df0.transform(lambda x: x * 10)) 
+print('\ndf.map(...) = \n', df0.map(lambda x: math.floor(x) if not math.isnan(x) else x))
+print('\ndf.apply(np.sqrt) = \n', df0.apply(np.sqrt))
+```
+
+#### Value counts
+
+```python
+s = pd.Series(np.random.randint(0, 7, size=10))
+print(s, '\n', s.value_counts())
+```
+
+```python
+
+np.random.seed(5)
+df = pd.DataFrame(np.random.randint(5, 7, size=15).reshape(5,3), index=list('ABCDE'), columns=list('XYZ')) 
+print(df)
+# DataFrame.value_counts(subset=None, normalize=False, sort=True, ascending=False, dropna=True)
+# Return a Series containing the frequency of each distinct row in the Dataframe.
+df.value_counts() # with a df, it counts the number of identical rows
+```
+
+#### String methods
+
+Series is equipped with a set of string processing methods in the str attribute that make it easy to operate on each element of the array. Cf. Vectorized String Methods.
+
+```python
+
+s = pd.Series(["A", "B", "C", "Aaba", "Baca", np.nan, "CABA", "dog", "cat"])
+
+s.str.lower()
 ```
 
 # Panda: Basics (Inspecting Movies)
